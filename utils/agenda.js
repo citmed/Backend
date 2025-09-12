@@ -117,18 +117,29 @@ const scheduleReminder = async (reminder) => {
       ? new Date(reminder.fecha.getTime() - 60 * 60 * 1000)
       : reminder.fecha;
 
-  // 🔹 Repetitivos o únicos
-  if (frecuencia === "diaria") {
-    const job = agenda.create("send-reminder", { userId: reminder.userId, reminderId: reminderIdStr });
-    job.repeatEvery("1 day", { skipImmediate: true, startDate: fechaRecordatorio });
-    await job.save();
-    console.log(`🔁 Recordatorio diario programado desde ${fechaRecordatorio}`);
+  // 🔹 Frecuencia diaria
+  if (reminder.frecuencia === 'Diaria') {
+    const primerEnvio = agenda.create('send-reminder', { userId: reminder.userId, reminderId: reminderIdStr });
+    primerEnvio.schedule(reminder.fecha);
+    await primerEnvio.save();
+    console.log(`📌 Primer recordatorio diario programado para ${reminder.fecha}`);
 
-  } else if (frecuencia === "semanal") {
-    const job = agenda.create("send-reminder", { userId: reminder.userId, reminderId: reminderIdStr });
-    job.repeatEvery("1 week", { skipImmediate: true, startDate: fechaRecordatorio });
-    await job.save();
-    console.log(`🔁 Recordatorio semanal programado desde ${fechaRecordatorio}`);
+    const jobRepetitivo = agenda.create('send-reminder', { userId: reminder.userId, reminderId: reminderIdStr });
+    jobRepetitivo.repeatEvery('1 day', { skipImmediate: true });
+    await jobRepetitivo.save();
+    console.log('🔁 Recordatorio diario repetitivo guardado');
+
+  // 🔹 Frecuencia semanal
+  } else if (reminder.frecuencia === 'Semanal') {
+    const primerEnvio = agenda.create('send-reminder', { userId: reminder.userId, reminderId: reminderIdStr });
+    primerEnvio.schedule(reminder.fecha);
+    await primerEnvio.save();
+    console.log(`📌 Primer recordatorio semanal programado para ${reminder.fecha}`);
+
+    const jobRepetitivo = agenda.create('send-reminder', { userId: reminder.userId, reminderId: reminderIdStr });
+    jobRepetitivo.repeatEvery('1 week', { skipImmediate: true });
+    await jobRepetitivo.save();
+    console.log('🔁 Recordatorio semanal repetitivo guardado');
 
   } else if (frecuencia === "personalizada" && reminder.intervaloPersonalizado) {
     const intervaloEn = parseInterval(reminder.intervaloPersonalizado);
