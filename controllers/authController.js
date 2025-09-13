@@ -30,7 +30,7 @@ exports.forgotPassword = async (req, res) => {
     await user.save();
 
     // 4. Construir link (ajusta la URL a tu frontend en producción)
-    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+    const resetUrl = `https://citamedfront.vercel.app/reset-password/${resetToken}`;
 
     // 5. Enviar correo
     await sendResetPasswordEmail(infoUser.email, resetUrl);
