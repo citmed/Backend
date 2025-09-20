@@ -211,33 +211,26 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
 
       if (email) {
         const { fecha, hora } = formatFechaHora(new Date(r.fecha));
-
-        // 🔹 Extrae los campos directamente de `r`
         await sendReminderEmail(email, {
-          tipo: r.tipo,
-          titulo: r.titulo,
-          descripcion: r.descripcion,
-          frecuencia: r.frecuencia,
-          dosis: r.dosis,
-          unidad: r.unidad,
-          horarios: r.horarios,
-          cantidadDisponible: r.cantidadDisponible,
-          nombrePersona: r.nombrePersona,
-          fecha,
-          hora,
+            tipo,
+            titulo,
+          descripcion,
+          frecuencia,
+          dosis,
+          unidad,
+          horarios,
+          cantidadDisponible,
+          nombrePersona,
         });
       }
     }
 
-    res.json({ message: `✅ Se enviaron ${pendientes.length} recordatorios` });
+    res.json({ message: `Se enviaron ${pendientes.length} recordatorios` });
   } catch (error) {
     console.error("❌ Error en ejecutarRecordatoriosPendientes:", error);
-    res
-      .status(500)
-      .json({ message: "Error al ejecutar recordatorios", error: error.message });
+    res.status(500).json({ message: "Error al ejecutar recordatorios", error: error.message });
   }
 };
-
 
 module.exports = {
   crearRecordatorio,
