@@ -5,8 +5,10 @@ const {
   obtenerRecordatoriosPorUsuario,
   eliminarRecordatorio,
   actualizarRecordatorio,
-  marcarRecordatorioCompletado
+  marcarRecordatorioCompletado,
+  ejecutarRecordatoriosPendientes
 } = require('../controllers/reminderController');
+
 
 const authMiddleware = require('../middlewares/authMiddleware'); // ⬅️ IMPORTA EL MIDDLEWARE
 
@@ -24,5 +26,9 @@ router.delete('/:id', authMiddleware, eliminarRecordatorio);
 
 // ✅ Marcar recordatorio como completado o no
 router.put('/:id/completed', authMiddleware, marcarRecordatorioCompletado);
+
+//✅ configuracion del cron cada minuto
+router.get("/cron/reminders", ejecutarRecordatoriosPendientes);
+
 
 module.exports = router;

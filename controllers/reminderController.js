@@ -1,9 +1,10 @@
+// controllers/reminder.js
 const Reminder = require("../models/reminder");
 const User = require("../models/User");
 const InfoUser = require("../models/InfoUser");
-const { agenda, scheduleReminder } = require("../utils/agenda");
+const sendReminderEmail = require("../utils/sendEmail"); // tu función de envío de correo
 
-// 📌 Formatear fecha y hora en 12h AM/PM ajustando a zona horaria local
+// 📌 Formatear fecha y hora
 const formatFechaHora = (date) => {
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
   const fecha = localDate.toLocaleDateString("es-CO");
@@ -39,7 +40,7 @@ const crearRecordatorio = async (req, res) => {
     if (!email) return res.status(400).json({ message: "Usuario sin correo válido" });
 
     const fechaNormalizada = fecha ? new Date(fecha) : new Date();
-    const nombreCompleto = info?.name ? `${info.name} ${info.lastName || ''}`.trim() : "Paciente";
+    const nombreCompleto = info?.name ? `${info.name} ${info.lastName || ""}`.trim() : "Paciente";
 
     const reminder = new Reminder({
       userId,
@@ -59,16 +60,12 @@ const crearRecordatorio = async (req, res) => {
 
     await reminder.save();
 
-    // Programar recordatorio en Agenda
-    await scheduleReminder(reminder);
-
     const { fecha: fForm, hora: hForm } = formatFechaHora(fechaNormalizada);
     res.status(201).json({
       ...reminder.toObject(),
       fechaFormateada: fForm,
       horaFormateada: hForm,
     });
-
   } catch (error) {
     console.error("❌ Error en crearRecordatorio:", error);
     res.status(500).json({ message: "Error al crear el recordatorio", error: error.message });
@@ -83,7 +80,7 @@ const obtenerRecordatoriosPorUsuario = async (req, res) => {
 
     const recordatorios = await Reminder.find({ userId });
 
-    const recordatoriosFormateados = recordatorios.map(r => {
+    const recordatoriosFormateados = recordatorios.map((r) => {
       const { fecha, hora } = formatFechaHora(new Date(r.fecha));
       return {
         ...r.toObject(),
@@ -109,11 +106,9 @@ const actualizarRecordatorio = async (req, res) => {
       req.body.fecha = new Date(req.body.fecha);
     }
 
-    const updated = await Reminder.findOneAndUpdate(
-      { _id: id, userId },
-      req.body,
-      { new: true }
-    );
+    const updated = await Reminder.findOneAndUpdate({ _id: id, userId }, req.body, {
+      new: true,
+    });
 
     if (!updated) return res.status(404).json({ message: "Recordatorio no encontrado" });
 
@@ -140,16 +135,6 @@ const eliminarRecordatorio = async (req, res) => {
 
     if (!deleted) return res.status(404).json({ message: "Recordatorio no encontrado" });
 
-    // Cancelar todos los jobs de Agenda relacionados
-    await agenda.start();
-    const numCanceled = await agenda.cancel({
-      $or: [
-        { 'data.reminderId': deleted._id.toString() },
-        { 'data.reminderId': deleted._id }
-      ]
-    });
-    console.log(`❌ Se cancelaron ${numCanceled} jobs de Agenda para el recordatorio ${deleted._id}`);
-
     res.json({ message: "✅ Recordatorio eliminado" });
   } catch (error) {
     console.error("❌ Error en eliminarRecordatorio:", error);
@@ -157,7 +142,7 @@ const eliminarRecordatorio = async (req, res) => {
   }
 };
 
-// 📌 Marcar recordatorio como completado o no
+// 📌 Marcar recordatorio como completado
 const marcarRecordatorioCompletado = async (req, res) => {
   try {
     const { id } = req.params;
@@ -172,21 +157,47 @@ const marcarRecordatorioCompletado = async (req, res) => {
 
     if (!reminder) return res.status(404).json({ message: "Recordatorio no encontrado" });
 
-    if (completed) {
-      await agenda.start();
-      const numCanceled = await agenda.cancel({
-        $or: [
-          { 'data.reminderId': reminder._id.toString() },
-          { 'data.reminderId': reminder._id }
-        ]
-      });
-      console.log(`❌ Se cancelaron ${numCanceled} jobs de Agenda para el recordatorio ${reminder._id}`);
-    }
-
     res.json(reminder);
   } catch (error) {
     console.error("❌ Error en marcarRecordatorioCompletado:", error);
     res.status(500).json({ message: "Error al actualizar el estado del recordatorio" });
+  }
+};
+
+// 📌 Endpoint que ejecutará el CRON (cron-job.org lo llama cada minuto)
+const ejecutarRecordatoriosPendientes = async (req, res) => {
+  try {
+    const ahora = new Date();
+    const dentroDe1Min = new Date(ahora.getTime() + 60 * 1000);
+
+    // Buscar recordatorios no completados que estén en el rango de 1 minuto
+    const pendientes = await Reminder.find({
+      completed: false,
+      fecha: { $gte: ahora, $lt: dentroDe1Min },
+    }).populate("userId");
+
+    for (const r of pendientes) {
+      const user = await User.findById(r.userId);
+      const info = await InfoUser.findOne({ userId: r.userId });
+      const email =
+        info?.email || (/\S+@\S+\.\S+/.test(user?.username) ? user.username : null);
+
+      if (email) {
+        const { fecha, hora } = formatFechaHora(new Date(r.fecha));
+        await sendReminderEmail(email, {
+          titulo: r.titulo,
+          descripcion: r.descripcion,
+          fecha,
+          hora,
+          paciente: r.nombrePersona,
+        });
+      }
+    }
+
+    res.json({ message: `Se enviaron ${pendientes.length} recordatorios` });
+  } catch (error) {
+    console.error("❌ Error en ejecutarRecordatoriosPendientes:", error);
+    res.status(500).json({ message: "Error al ejecutar recordatorios", error: error.message });
   }
 };
 
@@ -196,5 +207,5 @@ module.exports = {
   actualizarRecordatorio,
   eliminarRecordatorio,
   marcarRecordatorioCompletado,
-  
+  ejecutarRecordatoriosPendientes, // 👈 endpoint para cron-job
 };
