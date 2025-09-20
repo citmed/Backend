@@ -1,3 +1,4 @@
+// server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -7,9 +8,6 @@ const registerUserRoutes = require('./routes/registerUserRoutes');
 const loginRoutes = require('./routes/loginRoutes');
 const adminRegistrationRoutes = require('./routes/adminRegistrationRoutes');
 const reminderRoutes = require('./routes/reminderRoutes'); 
-/*const { cargarRecordatorios } = require("./utils/scheduler");*/
-const { initAgenda } = require("./utils/agenda");
-
 
 dotenv.config();
 const app = express();
@@ -20,15 +18,8 @@ app.use(cors());
 
 // Conexión a MongoDB
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('✅ MongoDB Connected');
-    initAgenda().then(() => {
-      console.log('Agenda iniciada');
-    }).catch(err => console.error('Error inicializando Agenda:', err));
-  })
+  .then(() => console.log('✅ MongoDB Connected'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
-
-
 
 // Rutas
 app.use('/api/register', registerUserRoutes);
@@ -38,18 +29,15 @@ app.use('/api/reminders', reminderRoutes);
 app.use("/api/info-user", require("./routes/infoUserRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
 
-
-
-
 // Ruta no encontrada
-app.use((req, res, next) => {
-    res.status(404).json({ msg: 'Ruta no encontrada' });
+app.use((req, res) => {
+  res.status(404).json({ msg: 'Ruta no encontrada' });
 });
 
 // Manejador de errores
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ msg: 'Error interno del servidor' });
+  console.error(err.stack);
+  res.status(500).json({ msg: 'Error interno del servidor' });
 });
 
 // Server
