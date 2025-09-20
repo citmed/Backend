@@ -2,6 +2,8 @@ const Reminder = require("../models/reminder");
 const User = require("../models/User");
 const InfoUser = require("../models/InfoUser");
 const { agenda, scheduleReminder } = require("../utils/agenda");
+const sendReminderEmail = require("../utils/sendEmail");
+
 
 // 📌 Formatear fecha y hora en 12h AM/PM ajustando a zona horaria local
 const formatFechaHora = (date) => {
