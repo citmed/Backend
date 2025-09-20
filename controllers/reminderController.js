@@ -199,12 +199,12 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
     const ahora = new Date();
     const dentroDe1Min = new Date(ahora.getTime() + 60 * 1000);
 
-    // Buscar recordatorios no completados que estén en el rango de 1 minuto
     const pendientes = await Reminder.find({
       completed: false,
       fecha: { $gte: ahora, $lt: dentroDe1Min },
-    }).populate("userId");
+    });
 
+    let enviados = 0;
     for (const r of pendientes) {
       const user = await User.findById(r.userId);
       const info = await InfoUser.findOne({ userId: r.userId });
@@ -213,7 +213,6 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
 
       if (email) {
         const { fecha, hora } = formatFechaHora(new Date(r.fecha));
-
         await sendReminderEmail(email, {
           titulo: r.titulo,
           descripcion: r.descripcion,
@@ -225,10 +224,20 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
           hora,
           paciente: r.nombrePersona,
         });
+
+        // ✅ Marcar como enviado
+        if (r.cantidadDisponible > 0) {
+          r.cantidadDisponible -= 1;
+          if (r.cantidadDisponible === 0) r.completed = true;
+        } else {
+          r.completed = true;
+        }
+        await r.save();
+        enviados++;
       }
     }
 
-    res.json({ message: `Se enviaron ${pendientes.length} recordatorios` });
+    res.json({ message: `Se enviaron ${enviados} recordatorios` });
   } catch (error) {
     console.error("❌ Error en ejecutarRecordatoriosPendientes:", error);
     res.status(500).json({ message: "Error al ejecutar recordatorios", error: error.message });
