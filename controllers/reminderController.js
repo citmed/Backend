@@ -1,4 +1,4 @@
-const Reminder = require("../models/reminder"); 
+const Reminder = require("../models/reminder");
 const User = require("../models/User");
 const InfoUser = require("../models/InfoUser");
 const sendReminderEmail = require("../utils/sendEmail");
@@ -178,6 +178,11 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
     });
 
     let enviados = 0;
+
+    if (pendientes.length === 0) {
+      console.log("⏰ No hay recordatorios pendientes en este minuto.");
+    }
+
     for (const r of pendientes) {
       const user = await User.findById(r.userId);
       const info = await InfoUser.findOne({ userId: r.userId });
@@ -186,20 +191,34 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
 
       if (email) {
         const { fecha, hora } = formatFechaHora(new Date(r.fecha));
+
+        console.log(`📩 Enviando recordatorio:
+  Usuario: ${info?.name || "Paciente"} ${info?.lastName || ""}
+  Email: ${email}
+  Tipo: ${r.tipo}
+  Título: ${r.titulo}
+  Fecha: ${fecha} ${hora}
+  Descripción: ${r.descripcion}
+  Dosis restante: ${r.cantidadDisponible}
+        `);
+
         await sendReminderEmail(email, `⏰ Recordatorio de ${r.tipo}`, {
           ...r.toObject(),
           horarios: [`${fecha} ${hora}`],
         });
 
-        // ✅ Marcar como enviado
+        // ✅ Marcar como enviado / reducir stock
         if (r.cantidadDisponible > 0) {
           r.cantidadDisponible -= 1;
           if (r.cantidadDisponible === 0) r.completed = true;
         } else {
           r.completed = true;
         }
+
         await r.save();
         enviados++;
+      } else {
+        console.warn(`⚠️ Recordatorio sin email válido → ID: ${r._id}`);
       }
     }
 
