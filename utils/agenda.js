@@ -42,7 +42,6 @@ agenda.define("send-reminder", async (job) => {
   await sendReminderEmail(email, `⏰ Recordatorio de ${reminder.tipo}`, {
     ...reminder.toObject(),
     horarios: [`${fecha} ${hora}`],
-    nombrePersona: info?.name ? `${info.name} ${info.lastName || ''}`.trim() : "Paciente",
   });
 
   // Descontar stock

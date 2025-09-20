@@ -3,7 +3,7 @@ const User = require("../models/User");
 const InfoUser = require("../models/InfoUser");
 const { agenda, scheduleReminder } = require("../utils/agenda");
 const sendReminderEmail = require("../utils/sendEmail");
-const moment = require("moment");
+
 
 // 📌 Formatear fecha y hora en 12h AM/PM ajustando a zona horaria local
 const formatFechaHora = (date) => {
@@ -42,7 +42,7 @@ const crearRecordatorio = async (req, res) => {
 
     const fechaNormalizada = fecha ? new Date(fecha) : new Date();
     const nombreCompleto = info?.name ? `${info.name} ${info.lastName || ''}`.trim() : "Paciente";
-    
+
     const reminder = new Reminder({
       userId,
       tipo,
@@ -194,6 +194,7 @@ const marcarRecordatorioCompletado = async (req, res) => {
 
 
 // 📌 Endpoint que ejecutará el CRON (cron-job.org lo llama cada minuto)
+// 📌 Endpoint CRON
 const ejecutarRecordatoriosPendientes = async (req, res) => {
   try {
     const ahora = new Date();
@@ -213,21 +214,17 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
 
       if (email) {
         const { fecha, hora } = formatFechaHora(new Date(r.fecha));
-        await sendReminderEmail(
-          email,
-          `⏰ Recordatorio de ${r.tipo}`,
-          {
-            tipo: r.tipo,
-            titulo: r.titulo,
-            descripcion: r.descripcion,
-            frecuencia: r.frecuencia,
-            dosis: r.dosis,
-            unidad: r.unidad,
-            cantidadDisponible: r.cantidadDisponible,
-            horarios: [`${moment(r.fecha).format("YYYY-MM-DD HH:mm")}`],
-            nombrePersona: info?.name ? `${info.name} ${info.lastName || ''}`.trim() : "Paciente", // 👈 clave correcta
-          }
-        );
+        await sendReminderEmail(email, {
+          titulo: r.titulo,
+          descripcion: r.descripcion,
+          frecuencia: r.frecuencia,
+          dosis: r.dosis,
+          unidad: r.unidad,
+          cantidadDisponible: r.cantidadDisponible,
+          fecha,
+          hora,
+          paciente: r.nombrePersona,
+        });
 
         // ✅ Marcar como enviado
         if (r.cantidadDisponible > 0) {
