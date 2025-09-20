@@ -212,15 +212,11 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
       if (email) {
         const { fecha, hora } = formatFechaHora(new Date(r.fecha));
         await sendReminderEmail(email, {
-            tipo,
-            titulo,
-          descripcion,
-          frecuencia,
-          dosis,
-          unidad,
-          horarios,
-          cantidadDisponible,
-          nombrePersona,
+          titulo: r.titulo,
+          descripcion: r.descripcion,
+          fecha,
+          hora,
+          paciente: r.nombrePersona,
         });
       }
     }
