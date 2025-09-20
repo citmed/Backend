@@ -1,4 +1,4 @@
-const Agenda = require('agenda');
+/** const Agenda = require('agenda');
 const Reminder = require('../models/reminder');
 const User = require('../models/User');
 const InfoUser = require('../models/InfoUser');
@@ -104,3 +104,4 @@ const initAgenda = async () => {
 };
 
 module.exports = { agenda, initAgenda, scheduleReminder };
+*/

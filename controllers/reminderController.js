@@ -1,9 +1,7 @@
-const Reminder = require("../models/reminder");
+const Reminder = require("../models/reminder"); 
 const User = require("../models/User");
 const InfoUser = require("../models/InfoUser");
-const { agenda, scheduleReminder } = require("../utils/agenda");
 const sendReminderEmail = require("../utils/sendEmail");
-
 
 // 📌 Formatear fecha y hora en 12h AM/PM ajustando a zona horaria local
 const formatFechaHora = (date) => {
@@ -60,9 +58,6 @@ const crearRecordatorio = async (req, res) => {
     });
 
     await reminder.save();
-
-    // Programar recordatorio en Agenda
-    await scheduleReminder(reminder);
 
     const { fecha: fForm, hora: hForm } = formatFechaHora(fechaNormalizada);
     res.status(201).json({
@@ -142,16 +137,6 @@ const eliminarRecordatorio = async (req, res) => {
 
     if (!deleted) return res.status(404).json({ message: "Recordatorio no encontrado" });
 
-    // Cancelar todos los jobs de Agenda relacionados
-    await agenda.start();
-    const numCanceled = await agenda.cancel({
-      $or: [
-        { 'data.reminderId': deleted._id.toString() },
-        { 'data.reminderId': deleted._id }
-      ]
-    });
-    console.log(`❌ Se cancelaron ${numCanceled} jobs de Agenda para el recordatorio ${deleted._id}`);
-
     res.json({ message: "✅ Recordatorio eliminado" });
   } catch (error) {
     console.error("❌ Error en eliminarRecordatorio:", error);
@@ -174,17 +159,6 @@ const marcarRecordatorioCompletado = async (req, res) => {
 
     if (!reminder) return res.status(404).json({ message: "Recordatorio no encontrado" });
 
-    if (completed) {
-      await agenda.start();
-      const numCanceled = await agenda.cancel({
-        $or: [
-          { 'data.reminderId': reminder._id.toString() },
-          { 'data.reminderId': reminder._id }
-        ]
-      });
-      console.log(`❌ Se cancelaron ${numCanceled} jobs de Agenda para el recordatorio ${reminder._id}`);
-    }
-
     res.json(reminder);
   } catch (error) {
     console.error("❌ Error en marcarRecordatorioCompletado:", error);
@@ -192,9 +166,7 @@ const marcarRecordatorioCompletado = async (req, res) => {
   }
 };
 
-
 // 📌 Endpoint que ejecutará el CRON (cron-job.org lo llama cada minuto)
-// 📌 Endpoint CRON
 const ejecutarRecordatoriosPendientes = async (req, res) => {
   try {
     const ahora = new Date();
@@ -214,16 +186,9 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
 
       if (email) {
         const { fecha, hora } = formatFechaHora(new Date(r.fecha));
-        await sendReminderEmail(email, {
-          titulo: r.titulo,
-          descripcion: r.descripcion,
-          frecuencia: r.frecuencia,
-          dosis: r.dosis,
-          unidad: r.unidad,
-          cantidadDisponible: r.cantidadDisponible,
-          fecha,
-          hora,
-          paciente: r.nombrePersona,
+        await sendReminderEmail(email, `⏰ Recordatorio de ${r.tipo}`, {
+          ...r.toObject(),
+          horarios: [`${fecha} ${hora}`],
         });
 
         // ✅ Marcar como enviado

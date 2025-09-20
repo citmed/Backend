@@ -34,19 +34,27 @@ const sendReminderEmail = async (to, subject, data = {}) => {
     horarios,
     cantidadDisponible,
     nombrePersona,
+    paciente, // 👈 soporta también "paciente"
   } = data;
 
+  // Usar el que exista
+  const persona = nombrePersona || paciente || "Paciente";
+
+  // Si no mandan subject, generar uno aquí
+  const finalSubject =
+    subject || `⏰ Recordatorio de ${tipo === "medicamento" ? "medicación" : "control"}`;
+
   // Generar HTML de horarios en Fecha y Hora (AM/PM)
-  let horariosHtml = '';
+  let horariosHtml = "";
   if (horarios && horarios.length > 0) {
     horarios.forEach((h) => {
-      let fecha = '';
-      let hora = '';
+      let fecha = "";
+      let hora = "";
 
-      if (h.includes(' ')) {
-        const partes = h.split(' ');
+      if (h.includes(" ")) {
+        const partes = h.split(" ");
         fecha = partes[0];
-        hora = partes.slice(1).join(' ');
+        hora = partes.slice(1).join(" ");
       } else {
         const dateObj = new Date(h);
         const fh = formatFechaHora(dateObj);
@@ -59,17 +67,17 @@ const sendReminderEmail = async (to, subject, data = {}) => {
   }
 
   // Ajustar etiqueta según tipo
-  const tituloLabel = tipo === 'control' ? 'Especialidad' : 'Medicamento';
+  const tituloLabel = tipo === "control" ? "Especialidad" : "Medicamento";
 
   // Mensaje especial
-  let mensajePersona = '';
-  if (nombrePersona) {
-    if (tipo === 'control') {
-      mensajePersona = `<p>Estimad@ ${nombrePersona}, te recordamos que tienes un <strong>control pendiente</strong>.</p>`;
-    } else if (tipo === 'medicamento') {
-      mensajePersona = `<p>Estimad@ ${nombrePersona}, te recordamos que tienes un <strong>medicamento pendiente</strong>.</p>`;
+  let mensajePersona = "";
+  if (persona) {
+    if (tipo === "control") {
+      mensajePersona = `<p>Estimad@ ${persona}, te recordamos que tienes un <strong>control pendiente</strong>.</p>`;
+    } else if (tipo === "medicamento") {
+      mensajePersona = `<p>Estimad@ ${persona}, te recordamos que tienes un <strong>medicamento pendiente</strong>.</p>`;
     } else {
-      mensajePersona = `<p>Estimad@ ${nombrePersona}, te recordamos que tienes un recordatorio pendiente.</p>`;
+      mensajePersona = `<p>Estimad@ ${persona}, te recordamos que tienes un recordatorio pendiente.</p>`;
     }
   }
 
@@ -85,14 +93,14 @@ const sendReminderEmail = async (to, subject, data = {}) => {
         <div style="margin-top: 20px; font-size: 16px; line-height: 1.6;">
           ${mensajePersona}
 
-          <p><strong>${tituloLabel}:</strong> ${titulo}</p>
-          <p><strong>Descripción:</strong> ${descripcion}</p>
-          <p><strong>Frecuencia:</strong> ${frecuencia}</p>
+          <p><strong>${tituloLabel}:</strong> ${titulo || "Sin título"}</p>
+          <p><strong>Descripción:</strong> ${descripcion || "Sin descripción"}</p>
+          <p><strong>Frecuencia:</strong> ${frecuencia || "No definida"}</p>
           ${
-            tipo === 'medicamento'
-              ? `${dosis ? `<p><strong>Dosis:</strong> ${dosis} ${unidad}</p>` : ''}
-                 ${cantidadDisponible ? `<p><strong>Cantidad disponible:</strong> ${cantidadDisponible} ${unidad}</p>` : ''}`
-              : ''
+            tipo === "medicamento"
+              ? `${dosis ? `<p><strong>Dosis:</strong> ${dosis} ${unidad}</p>` : ""}
+                 ${cantidadDisponible ? `<p><strong>Cantidad disponible:</strong> ${cantidadDisponible} ${unidad}</p>` : ""}`
+              : ""
           }
           ${horariosHtml}
         </div>
@@ -107,22 +115,22 @@ const sendReminderEmail = async (to, subject, data = {}) => {
   const mailOptions = {
     from: `"CITAMED 📅" <${process.env.EMAIL_USER}>`,
     to,
-    subject,
+    subject: finalSubject,
     html,
     attachments: [
       {
-        filename: 'logo.png',
-        path: path.join(__dirname, '../assets/logo.png'),
-        cid: 'citamedlogo',
+        filename: "logo.png",
+        path: path.join(__dirname, "../assets/logo.png"),
+        cid: "citamedlogo",
       },
     ],
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log('📨 Correo enviado a', to);
+    console.log("📨 Correo enviado a", to);
   } catch (error) {
-    console.error('❌ Error al enviar correo:', error);
+    console.error("❌ Error al enviar correo:", error);
   }
 };
 
