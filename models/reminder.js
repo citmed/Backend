@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+
 const reminderSchema = new mongoose.Schema({
   tipo: {
     type: String, // "control" o "medicamento"
