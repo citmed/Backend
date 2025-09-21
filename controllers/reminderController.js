@@ -99,6 +99,25 @@ const obtenerRecordatoriosPorUsuario = async (req, res) => {
   }
 };
 
+// ✅ Obtener un recordatorio por ID
+const obtenerRecordatorioPorId = async (req, res) => {
+  try {
+    const reminder = await Reminder.findOne({
+      _id: req.params.id,
+      user: req.user.id, // asegura que solo vea sus recordatorios
+    });
+
+    if (!reminder) {
+      return res.status(404).json({ msg: "Recordatorio no encontrado" });
+    }
+
+    res.json(reminder);
+  } catch (error) {
+    console.error("❌ Error al obtener recordatorio:", error);
+    res.status(500).json({ msg: "Error en el servidor" });
+  }
+};
+
 // 📌 Actualizar recordatorio
 const actualizarRecordatorio = async (req, res) => {
   try {
@@ -245,5 +264,6 @@ module.exports = {
   actualizarRecordatorio,
   eliminarRecordatorio,
   marcarRecordatorioCompletado,
-  ejecutarRecordatoriosPendientes, // 👈 endpoint para cron-job
+  ejecutarRecordatoriosPendientes, 
+  obtenerRecordatorioPorId,
 };

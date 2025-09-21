@@ -6,7 +6,8 @@ const {
   eliminarRecordatorio,
   actualizarRecordatorio,
   marcarRecordatorioCompletado,
-  ejecutarRecordatoriosPendientes
+  ejecutarRecordatoriosPendientes,
+  obtenerRecordatorioPorId
 } = require('../controllers/reminderController');
 
 
@@ -17,6 +18,9 @@ router.post('/', authMiddleware, crearRecordatorio);
 
 // ✅ Obtener recordatorios del usuario autenticado
 router.get('/', authMiddleware, obtenerRecordatoriosPorUsuario);
+
+// ✅ Obtener un recordatorio por ID
+router.get('/:id', authMiddleware, obtenerRecordatorioPorId);
 
 // ✅ Actualizar un recordatorio
 router.put('/:id', authMiddleware, actualizarRecordatorio);
