@@ -8,7 +8,7 @@ const loginRoutes = require('./routes/loginRoutes');
 const adminRegistrationRoutes = require('./routes/adminRegistrationRoutes');
 const reminderRoutes = require('./routes/reminderRoutes'); 
 /*const { cargarRecordatorios } = require("./utils/scheduler");*/
-const { initAgenda } = require("./utils/agenda");
+/*const { initAgenda } = require("./utils/agenda");*/
 
 
 dotenv.config();
@@ -22,9 +22,6 @@ app.use(cors());
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('✅ MongoDB Connected');
-    initAgenda().then(() => {
-      console.log('Agenda iniciada');
-    }).catch(err => console.error('Error inicializando Agenda:', err));
   })
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
