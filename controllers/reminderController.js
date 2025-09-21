@@ -99,22 +99,22 @@ const obtenerRecordatoriosPorUsuario = async (req, res) => {
   }
 };
 
-// ✅ Obtener un recordatorio por ID
+// 📌 Obtener un recordatorio por ID
 const obtenerRecordatorioPorId = async (req, res) => {
   try {
-    const reminder = await Reminder.findOne({
-      _id: req.params.id,
-      user: req.user.id, // asegura que solo vea sus recordatorios
-    });
+    const { id } = req.params;
+    const userId = req.user.id; // gracias al middleware
+
+    const reminder = await Reminder.findOne({ _id: id, userId });
 
     if (!reminder) {
-      return res.status(404).json({ msg: "Recordatorio no encontrado" });
+      return res.status(404).json({ message: "Recordatorio no encontrado" });
     }
 
     res.json(reminder);
   } catch (error) {
-    console.error("❌ Error al obtener recordatorio:", error);
-    res.status(500).json({ msg: "Error en el servidor" });
+    console.error("❌ Error en obtenerRecordatorioPorId:", error);
+    res.status(500).json({ message: "Error al obtener recordatorio" });
   }
 };
 
