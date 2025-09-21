@@ -5,15 +5,18 @@ const sendReminderEmail = require("../utils/sendEmail");
 
 // 📌 Formatear fecha y hora en 12h AM/PM ajustando a zona horaria local
 const formatFechaHora = (date) => {
-  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  const fecha = localDate.toLocaleDateString("es-CO");
-  const hora = localDate.toLocaleTimeString("es-CO", {
+  const fecha = date.toLocaleDateString("es-CO", {
+    timeZone: "America/Bogota",
+  });
+  const hora = date.toLocaleTimeString("es-CO", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
+    timeZone: "America/Bogota",
   });
   return { fecha, hora };
 };
+
 
 // 📌 Crear recordatorio
 const crearRecordatorio = async (req, res) => {
