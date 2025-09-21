@@ -167,13 +167,15 @@ const marcarRecordatorioCompletado = async (req, res) => {
 };
 
 // 📌 Endpoint que ejecutará el CRON (cron-job.org lo llama cada minuto)
+// 📌 Endpoint que ejecutará el CRON (cron-job.org lo llama cada minuto)
 const ejecutarRecordatoriosPendientes = async (req, res) => {
   try {
     const ahora = new Date();
     const dentroDe1Min = new Date(ahora.getTime() + 60 * 1000);
 
+    // ✅ Buscar recordatorios pendientes (aún no enviados y dentro del minuto)
     const pendientes = await Reminder.find({
-      completed: false,
+      sent: false,
       fecha: { $gte: ahora, $lt: dentroDe1Min },
     });
 
@@ -207,12 +209,16 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
           horarios: [`${fecha} ${hora}`],
         });
 
-        // ✅ Marcar como enviado / reducir stock
+        // ✅ Marcar solo como enviado
+        r.sent = true;
+
+        // Si tiene stock de dosis, se descuenta, pero el paciente debe confirmar "completed"
         if (r.cantidadDisponible > 0) {
           r.cantidadDisponible -= 1;
-          if (r.cantidadDisponible === 0) r.completed = true;
-        } else {
-          r.completed = true;
+          if (r.cantidadDisponible === 0) {
+            // Opcional: marcar completado cuando ya no hay más dosis
+            r.completed = true;
+          }
         }
 
         await r.save();
@@ -228,6 +234,7 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
     res.status(500).json({ message: "Error al ejecutar recordatorios", error: error.message });
   }
 };
+
 
 module.exports = {
   crearRecordatorio,

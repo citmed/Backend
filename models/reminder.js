@@ -1,5 +1,3 @@
-const mongoose = require("mongoose");
-
 const reminderSchema = new mongoose.Schema({
   tipo: {
     type: String, // "control" o "medicamento"
@@ -20,7 +18,7 @@ const reminderSchema = new mongoose.Schema({
   frecuencia: {
     type: String,
     enum: ["Diaria", "Semanal", "Personalizada", "Unica"],
-    default: 'Unica',
+    default: "Unica",
     required: true,
   },
   horarios: {
@@ -39,19 +37,22 @@ const reminderSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-   completed: {
-    type: Boolean,
-    default: false, 
+  completed: {
+    type: Boolean, // ✅ Paciente confirma
+    default: false,
   },
-  intervaloPersonalizado: { 
-    type: String, 
-    default: null 
+  sent: {
+    type: Boolean, // ✅ Se envió correo, independiente de si el paciente tomó o no
+    default: false,
   },
-  nombrePersona: { 
-    type: String, 
+  intervaloPersonalizado: {
+    type: String,
+    default: null,
+  },
+  nombrePersona: {
+    type: String,
     default: "paciente",
   },
-
 });
 
 module.exports = mongoose.model("Reminder", reminderSchema);
