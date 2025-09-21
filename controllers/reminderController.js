@@ -167,23 +167,18 @@ const marcarRecordatorioCompletado = async (req, res) => {
 };
 
 // 📌 Endpoint que ejecutará el CRON (cron-job.org lo llama cada minuto)
-// 📌 Endpoint que ejecutará el CRON (cron-job.org lo llama cada minuto)
 const ejecutarRecordatoriosPendientes = async (req, res) => {
   try {
     const ahora = new Date();
     const dentroDe1Min = new Date(ahora.getTime() + 60 * 1000);
 
-    // ✅ Buscar recordatorios pendientes (aún no enviados y dentro del minuto)
+    // ✅ Buscar recordatorios activos que caen en este minuto
     const pendientes = await Reminder.find({
-      sent: false,
+      completed: false,
       fecha: { $gte: ahora, $lt: dentroDe1Min },
     });
 
     let enviados = 0;
-
-    if (pendientes.length === 0) {
-      console.log("⏰ No hay recordatorios pendientes en este minuto.");
-    }
 
     for (const r of pendientes) {
       const user = await User.findById(r.userId);
@@ -191,10 +186,14 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
       const email =
         info?.email || (/\S+@\S+\.\S+/.test(user?.username) ? user.username : null);
 
-      if (email) {
-        const { fecha, hora } = formatFechaHora(new Date(r.fecha));
+      if (!email) {
+        console.warn(`⚠️ Recordatorio sin email válido → ID: ${r._id}`);
+        continue;
+      }
 
-        console.log(`📩 Enviando recordatorio:
+      const { fecha, hora } = formatFechaHora(new Date(r.fecha));
+
+      console.log(`📩 Enviando recordatorio:
   Usuario: ${info?.name || "Paciente"} ${info?.lastName || ""}
   Email: ${email}
   Tipo: ${r.tipo}
@@ -202,30 +201,30 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
   Fecha: ${fecha} ${hora}
   Descripción: ${r.descripcion}
   Dosis restante: ${r.cantidadDisponible}
-        `);
+      `);
 
-        await sendReminderEmail(email, `⏰ Recordatorio de ${r.tipo}`, {
-          ...r.toObject(),
-          horarios: [`${fecha} ${hora}`],
-        });
+      await sendReminderEmail(email, `⏰ Recordatorio de ${r.tipo}`, {
+        ...r.toObject(),
+        horarios: [`${fecha} ${hora}`],
+      });
 
-        // ✅ Marcar solo como enviado
-        r.sent = true;
+      // ✅ Descontar dosis
+      if (r.cantidadDisponible > 0) {
+        r.cantidadDisponible -= 1;
 
-        // Si tiene stock de dosis, se descuenta, pero el paciente debe confirmar "completed"
-        if (r.cantidadDisponible > 0) {
-          r.cantidadDisponible -= 1;
-          if (r.cantidadDisponible === 0) {
-            // Opcional: marcar completado cuando ya no hay más dosis
-            r.completed = true;
-          }
+        // Si aún quedan, mover la fecha al próximo intervalo (ej: +2 min)
+        if (r.cantidadDisponible > 0 && r.intervaloPersonalizado) {
+          const intervalo = parseInt(r.intervaloPersonalizado, 10); // minutos
+          r.fecha = new Date(r.fecha.getTime() + intervalo * 60 * 1000);
+        } else if (r.cantidadDisponible === 0) {
+          r.completed = true; // sin stock
         }
-
-        await r.save();
-        enviados++;
       } else {
-        console.warn(`⚠️ Recordatorio sin email válido → ID: ${r._id}`);
+        r.completed = true;
       }
+
+      await r.save();
+      enviados++;
     }
 
     res.json({ message: `Se enviaron ${enviados} recordatorios` });
@@ -234,6 +233,7 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
     res.status(500).json({ message: "Error al ejecutar recordatorios", error: error.message });
   }
 };
+
 
 
 module.exports = {
