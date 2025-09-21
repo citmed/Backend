@@ -212,18 +212,19 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
       });
 
       // ✅ Descontar dosis
-      if (r.cantidadDisponible >= 1) {
-        r.cantidadDisponible -= 1;
+      if (r.cantidadDisponible >= r.dosis) {
+        r.cantidadDisponible -= r.dosis;
 
         // Si aún quedan, mover la fecha al próximo intervalo (ej: +2 min)
-        if (r.cantidadDisponible > 1 && r.intervaloPersonalizado) {
+        if (r.cantidadDisponible > r.dosis && r.intervaloPersonalizado) {
           const intervalo = parseInt(r.intervaloPersonalizado, 10); // minutos
           r.fecha = new Date(r.fecha.getTime() + intervalo * 60 * 1000);
         } 
 
-        if (r.cantidadDisponible === 0) {
+        if (r.cantidadDisponible < r.dosis) {
           r.completed = true; // sin stock
         }
+        
       } else {
         r.completed = true;
       }
