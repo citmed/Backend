@@ -40,7 +40,7 @@ app.use("/api/auth", require("./routes/authRoutes"));
 
 // Ruta no encontrada
 app.use((req, res, next) => {
-    res.status(404).json({ CITAMED CORRIENDO });
+    res.status(404).json({ CITAMED_BACKEND });
 });
 
 // Manejador de errores
