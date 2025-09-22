@@ -199,7 +199,6 @@ const marcarRecordatorioCompletado = async (req, res) => {
   }
 };
 
-// 📌 Endpoint que ejecutará el CRON (cron-job.org lo llama cada minuto)
 const ejecutarRecordatoriosPendientes = async (req, res) => {
   try {
     const ahora = new Date();
@@ -214,8 +213,8 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
         {
           tipo: "control",
           fecha: {
-            $gte: new Date(ahora.getTime() + 60 * 60 * 1000), // fecha real = ahora +1h
-            $lt: new Date(dentroDe1Min.getTime() + 60 * 60 * 1000),
+            $gte: new Date(ahora.getTime() + 0), // ahora real
+            $lt: new Date(dentroDe1Min.getTime()), // dentro de 1 min
           },
         },
         // Para otros tipos → enviar en la hora normal
@@ -239,10 +238,10 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
         continue;
       }
 
-      // 👇 Si es "control", muestro la fecha ajustada -1h en el correo
+      // ⚡ Mostrar la hora original, pero enviar 1h antes si es "control"
       const fechaMostrar =
         r.tipo === "control"
-          ? new Date(r.fecha)
+          ? new Date(r.fecha) // 👈 se muestra la hora original
           : new Date(r.fecha);
 
       const { fecha, hora } = formatFechaHora(fechaMostrar);
@@ -252,14 +251,14 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
   Email: ${email}
   Tipo: ${r.tipo}
   Título: ${r.titulo}
-  Fecha: ${fecha} ${hora}
+  Fecha programada: ${fecha} ${hora}
   Descripción: ${r.descripcion}
   Dosis restante: ${r.cantidadDisponible}
       `);
 
       await sendReminderEmail(email, `⏰ Recordatorio de ${r.tipo}`, {
         ...r.toObject(),
-        horarios: [`${fecha} ${hora}`],
+        horarios: [`${fecha} ${hora}`], // 👈 hora real, no adelantada
       });
 
       // ✅ Marcar como enviado
@@ -269,11 +268,10 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
       if (r.cantidadDisponible > 0) {
         r.cantidadDisponible -= 1;
 
-        // Si aún quedan, mover la fecha al próximo intervalo
         if (r.cantidadDisponible > 0 && r.intervaloPersonalizado) {
           const intervalo = parseInt(r.intervaloPersonalizado, 10); // minutos
           r.fecha = new Date(r.fecha.getTime() + intervalo * 60 * 1000);
-          r.sent = false; // 👈 para permitir futuros envíos
+          r.sent = false; // 👈 permitir futuros envíos
         } else if (r.cantidadDisponible === 0) {
           r.completed = true; // sin stock
         }
@@ -294,6 +292,7 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
     });
   }
 };
+
 
 
 
