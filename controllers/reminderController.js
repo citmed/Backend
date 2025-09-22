@@ -103,7 +103,7 @@ const obtenerRecordatoriosPorUsuario = async (req, res) => {
 const obtenerRecordatorioPorId = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id; // gracias al middleware
+    const userId = req.user.id;
 
     const reminder = await Reminder.findOne({ _id: id, userId });
 
@@ -111,12 +111,23 @@ const obtenerRecordatorioPorId = async (req, res) => {
       return res.status(404).json({ message: "Recordatorio no encontrado" });
     }
 
-    res.json(reminder);
+    const { fecha, hora } = formatFechaHora(new Date(reminder.fecha));
+
+    res.json({
+      ...reminder.toObject(),
+      fechaFormateada: fecha,
+      horaFormateada: hora,
+      // 👇 importante para <input type="datetime-local">
+      fechaISO: new Date(reminder.fecha.getTime() - reminder.fecha.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16),
+    });
   } catch (error) {
     console.error("❌ Error en obtenerRecordatorioPorId:", error);
     res.status(500).json({ message: "Error al obtener recordatorio" });
   }
 };
+
 
 // 📌 Actualizar recordatorio
 const actualizarRecordatorio = async (req, res) => {
