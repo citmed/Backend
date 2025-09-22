@@ -14,7 +14,13 @@ const registerUser = async (req, res) => {
     // Verificar si el usuario ya existe
     let user = await User.findOne({ username });
     if (user) {
-      return res.status(400).json({ msg: 'Usuario ya registrado' });
+      return res.status(400).json({ msg: 'Nombre de usuario ya registrado' });
+    }
+
+    // Verificar si el correo ya está registrado
+    user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ msg: 'Correo ya registrado' });
     }
 
     // Hashear contraseña (10 salt rounds está bien para bcryptjs)
