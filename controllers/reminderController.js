@@ -242,7 +242,7 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
       // 👇 Si es "control", muestro la fecha ajustada -1h en el correo
       const fechaMostrar =
         r.tipo === "control"
-          ? new Date(r.fecha.getTime() - 60 * 60 * 1000)
+          ? new Date(r.fecha)
           : new Date(r.fecha);
 
       const { fecha, hora } = formatFechaHora(fechaMostrar);
