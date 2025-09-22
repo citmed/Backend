@@ -22,7 +22,7 @@ exports.forgotPassword = async (req, res) => {
         .status(400)
         .json({ msg: "No hay correo registrado para este usuario" });
     }
-
+    
     // 3. Generar token
     const resetToken = crypto.randomBytes(32).toString("hex");
     user.resetPasswordToken = resetToken;
@@ -72,6 +72,28 @@ exports.resetPassword = async (req, res) => {
     res.json({ msg: "✅ Contraseña actualizada correctamente" });
   } catch (err) {
     console.error("❌ Error en resetPassword:", err);
+    res.status(500).json({ msg: "Error en el servidor" });
+  }
+};
+// 📌 Recuperar nombre de usuario por correo
+exports.recoverUsername = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ msg: "El correo es obligatorio" });
+    }
+
+    // Buscar el correo en InfoUser
+    const infoUser = await InfoUser.findOne({ email }).populate("userId");
+    if (!infoUser || !infoUser.userId) {
+      return res.status(404).json({ msg: "No existe un usuario con ese correo" });
+    }
+
+    // ⚡ Enviar solo el username (sin exponer info sensible)
+    res.json({ username: infoUser.userId.username });
+  } catch (err) {
+    console.error("❌ Error en recoverUsername:", err);
     res.status(500).json({ msg: "Error en el servidor" });
   }
 };
