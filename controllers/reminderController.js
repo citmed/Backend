@@ -199,6 +199,7 @@ const marcarRecordatorioCompletado = async (req, res) => {
   }
 };
 
+
 const ejecutarRecordatoriosPendientes = async (req, res) => {
   try {
     const ahora = new Date();
@@ -213,8 +214,8 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
         {
           tipo: "control",
           fecha: {
-            $gte: new Date(ahora.getTime() + 0), // ahora real
-            $lt: new Date(dentroDe1Min.getTime()), // dentro de 1 min
+            $gte: new Date(ahora.getTime()+ 60 * 60 * 1000), // ahora real
+            $lt: new Date(dentroDe1Min.getTime()+ 60 * 60 * 1000), // dentro de 1 min
           },
         },
         // Para otros tipos → enviar en la hora normal
