@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const InfoUser = require("../models/InfoUser");
 const sendResetPasswordEmail = require("../utils/sendResetPasswordEmail");
+const sendRecoverUsernameEmail = require("../utils/sendRecoverUsernameEmail");
 
 // 📌 Recuperar contraseña (forgot password)
 exports.forgotPassword = async (req, res) => {
@@ -75,23 +76,24 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ msg: "Error en el servidor" });
   }
 };
-// 📌 Recuperar nombre de usuario por correo
+
+// 📌 Enviar nombre de usuario por correo
 exports.recoverUsername = async (req, res) => {
   try {
     const { email } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ msg: "El correo es obligatorio" });
-    }
-
-    // Buscar el correo en InfoUser
+    // Buscar al usuario por su email en InfoUser
     const infoUser = await InfoUser.findOne({ email }).populate("userId");
-    if (!infoUser || !infoUser.userId) {
-      return res.status(404).json({ msg: "No existe un usuario con ese correo" });
+    if (!infoUser) {
+      return res.status(400).json({ msg: "No se encontró usuario con este correo" });
     }
 
-    // ⚡ Enviar solo el username (sin exponer info sensible)
-    res.json({ username: infoUser.userId.username });
+    const username = infoUser.userId.username;
+
+    // Enviar correo con el username
+    await sendRecoverUsernameEmail(email, username);
+
+    res.json({ msg: "📩 Tu nombre de usuario fue enviado a tu correo electrónico" });
   } catch (err) {
     console.error("❌ Error en recoverUsername:", err);
     res.status(500).json({ msg: "Error en el servidor" });
