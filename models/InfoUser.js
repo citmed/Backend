@@ -6,7 +6,7 @@ const InfoUserSchema = new mongoose.Schema({
   lastName: String,
   birthdate: String,
   phone: String,
-  email: String, // 📩 Aquí se guarda el correo del usuario
+  email: { type: String, required: true, unique: true }, // 📩 Aquí se guarda el correo del usuario
 });
 
 module.exports = mongoose.model("InfoUser", InfoUserSchema);
