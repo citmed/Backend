@@ -99,6 +99,36 @@ const obtenerRecordatoriosPorUsuario = async (req, res) => {
   }
 };
 
+// 📌 Obtener un recordatorio por ID
+const obtenerRecordatorioPorId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const reminder = await Reminder.findOne({ _id: id, userId });
+
+    if (!reminder) {
+      return res.status(404).json({ message: "Recordatorio no encontrado" });
+    }
+
+    const { fecha, hora } = formatFechaHora(new Date(reminder.fecha));
+
+    res.json({
+      ...reminder.toObject(),
+      fechaFormateada: fecha,
+      horaFormateada: hora,
+      // 👇 importante para <input type="datetime-local">
+      fechaISO: new Date(reminder.fecha.getTime() - reminder.fecha.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16),
+    });
+  } catch (error) {
+    console.error("❌ Error en obtenerRecordatorioPorId:", error);
+    res.status(500).json({ message: "Error al obtener recordatorio" });
+  }
+};
+
+
 // 📌 Actualizar recordatorio
 const actualizarRecordatorio = async (req, res) => {
   try {
@@ -169,16 +199,31 @@ const marcarRecordatorioCompletado = async (req, res) => {
   }
 };
 
-// 📌 Endpoint que ejecutará el CRON (cron-job.org lo llama cada minuto)
+
 const ejecutarRecordatoriosPendientes = async (req, res) => {
   try {
     const ahora = new Date();
     const dentroDe1Min = new Date(ahora.getTime() + 60 * 1000);
 
-    // ✅ Buscar recordatorios activos que caen en este minuto
+    // ✅ Buscar recordatorios pendientes
     const pendientes = await Reminder.find({
       completed: false,
-      fecha: { $gte: ahora, $lt: dentroDe1Min },
+      sent: false, // 👈 evita reenvíos
+      $or: [
+        // Para "control" → enviar 1 hora antes
+        {
+          tipo: "control",
+          fecha: {
+            $gte: new Date(ahora.getTime()+ 60 * 60 * 1000), // ahora real
+            $lt: new Date(dentroDe1Min.getTime()+ 60 * 60 * 1000), // dentro de 1 min
+          },
+        },
+        // Para otros tipos → enviar en la hora normal
+        {
+          tipo: { $ne: "control" },
+          fecha: { $gte: ahora, $lt: dentroDe1Min },
+        },
+      ],
     });
 
     let enviados = 0;
@@ -194,23 +239,33 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
         continue;
       }
 
-      const { fecha, hora } = formatFechaHora(new Date(r.fecha));
+      // ⚡ Mostrar la hora original, pero enviar 1h antes si es "control"
+      const fechaMostrar =
+        r.tipo === "control"
+          ? new Date(r.fecha) // 👈 se muestra la hora original
+          : new Date(r.fecha);
+
+      const { fecha, hora } = formatFechaHora(fechaMostrar);
 
       console.log(`📩 Enviando recordatorio:
   Usuario: ${info?.name || "Paciente"} ${info?.lastName || ""}
   Email: ${email}
   Tipo: ${r.tipo}
   Título: ${r.titulo}
-  Fecha: ${fecha} ${hora}
+  Fecha programada: ${fecha} ${hora}
   Descripción: ${r.descripcion}
   Dosis restante: ${r.cantidadDisponible}
       `);
 
       await sendReminderEmail(email, `⏰ Recordatorio de ${r.tipo}`, {
         ...r.toObject(),
-        horarios: [`${fecha} ${hora}`],
+        horarios: [`${fecha} ${hora}`], // 👈 hora real, no adelantada
       });
 
+      // ✅ Marcar como enviado
+      r.sent = true;
+
+    
       // ✅ Descontar dosis
       if (r.cantidadDisponible >= r.dosis) {
         r.cantidadDisponible -= r.dosis;
@@ -236,9 +291,15 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
     res.json({ message: `Se enviaron ${enviados} recordatorios` });
   } catch (error) {
     console.error("❌ Error en ejecutarRecordatoriosPendientes:", error);
-    res.status(500).json({ message: "Error al ejecutar recordatorios", error: error.message });
+    res.status(500).json({
+      message: "Error al ejecutar recordatorios",
+      error: error.message,
+    });
   }
 };
+
+
+
 
 
 
@@ -248,5 +309,6 @@ module.exports = {
   actualizarRecordatorio,
   eliminarRecordatorio,
   marcarRecordatorioCompletado,
-  ejecutarRecordatoriosPendientes, // 👈 endpoint para cron-job
+  ejecutarRecordatoriosPendientes, 
+  obtenerRecordatorioPorId,
 };
