@@ -206,18 +206,18 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
     const dentroDe1Min = new Date(ahora.getTime() + 60 * 1000);
 
     // ✅ Buscar recordatorios activos que caen en este minuto
-      const pendientes = await Reminder.find({
+    const pendientes = await Reminder.find({
       completed: false,
       $or: [
         // Para "control" → enviar 1 hora antes
         {
           tipo: "control",
           fecha: {
-            $gte: new Date(ahora.getTime() + 60 * 60 * 1000),
-            $lt: new Date(dentroDe1Min.getTime() + 60 * 60 * 1000),
+            $gte: new Date(ahora.getTime() + 60 * 60 * 1000),       // dentro de 1h
+            $lt: new Date(dentroDe1Min.getTime() + 60 * 60 * 1000), // dentro de 1h y 1min
           },
         },
-        // Para otros tipos → enviar en la hora normal
+        // Para otros tipos → enviar en la hora exacta
         {
           tipo: { $ne: "control" },
           fecha: { $gte: ahora, $lt: dentroDe1Min },
@@ -259,12 +259,11 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
       if (r.cantidadDisponible > 0) {
         r.cantidadDisponible -= 1;
 
-        // Si aún quedan, mover la fecha al próximo intervalo (ej: +2 min)
         if (r.cantidadDisponible > 0 && r.intervaloPersonalizado) {
           const intervalo = parseInt(r.intervaloPersonalizado, 10); // minutos
           r.fecha = new Date(r.fecha.getTime() + intervalo * 60 * 1000);
         } else if (r.cantidadDisponible === 0) {
-          r.completed = true; // sin stock
+          r.completed = true;
         }
       } else {
         r.completed = true;
@@ -277,9 +276,13 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
     res.json({ message: `Se enviaron ${enviados} recordatorios` });
   } catch (error) {
     console.error("❌ Error en ejecutarRecordatoriosPendientes:", error);
-    res.status(500).json({ message: "Error al ejecutar recordatorios", error: error.message });
+    res.status(500).json({
+      message: "Error al ejecutar recordatorios",
+      error: error.message,
+    });
   }
 };
+
 
 
 
