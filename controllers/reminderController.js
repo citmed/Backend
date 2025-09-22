@@ -213,8 +213,8 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
         {
           tipo: "control",
           fecha: {
-            $gte: new Date(ahora.getTime() + 60 * 60 * 1000),
-            $lt: new Date(dentroDe1Min.getTime() + 60 * 60 * 1000),
+            $gte: new Date(ahora.getTime() + -60 * 60 * 1000),
+            $lt: new Date(dentroDe1Min.getTime() - 60 * 60 * 1000),
           },
         },
         // Para otros tipos → enviar en la hora normal
@@ -223,7 +223,6 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
           fecha: { $gte: ahora, $lt: dentroDe1Min },
         },
       ],
-      fecha: { $gte: ahora, $lt: dentroDe1Min },
     });
 
     let enviados = 0;
