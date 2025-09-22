@@ -135,28 +135,17 @@ const actualizarRecordatorio = async (req, res) => {
     const { id } = req.params;
     const userId = req.user?.id;
 
-    // 🔹 Primero buscamos el recordatorio
-    const reminder = await Reminder.findOne({ _id: id, userId });
-    if (!reminder) {
-      return res.status(404).json({ message: "Recordatorio no encontrado" });
-    }
-
-    // 🚫 Bloquear si ya fue enviado
-    if (reminder.sent) {
-      return res.status(400).json({ message: "Este recordatorio ya fue enviado y no se puede modificar" });
-    }
-
-    // 🔹 Convertir fecha si viene
     if (req.body.fecha) {
       req.body.fecha = new Date(req.body.fecha);
     }
 
-    // 🔹 Actualizar recordatorio
     const updated = await Reminder.findOneAndUpdate(
       { _id: id, userId },
       req.body,
       { new: true }
     );
+
+    if (!updated) return res.status(404).json({ message: "Recordatorio no encontrado" });
 
     const { fecha: fForm, hora: hForm } = formatFechaHora(new Date(updated.fecha));
 
@@ -170,7 +159,6 @@ const actualizarRecordatorio = async (req, res) => {
     res.status(500).json({ message: "Error al actualizar el recordatorio" });
   }
 };
-
 
 // 📌 Eliminar recordatorio
 const eliminarRecordatorio = async (req, res) => {
@@ -277,20 +265,18 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
       // ✅ Marcar como enviado
       r.sent = true;
 
-     // ✅ Descontar dosis
-      if (r.cantidadDisponible >= r.dosis) {
-        r.cantidadDisponible -= r.dosis;
+      // ✅ Descontar dosis
+      if (r.cantidadDisponible > 0) {
+        r.cantidadDisponible -= 1;
 
-        // Si aún quedan, mover la fecha al próximo intervalo (ej: +2 min)
-        if (r.cantidadDisponible > r.dosis && r.intervaloPersonalizado) {
+        // Si aún quedan, mover la fecha al próximo intervalo
+        if (r.cantidadDisponible > 0 && r.intervaloPersonalizado) {
           const intervalo = parseInt(r.intervaloPersonalizado, 10); // minutos
           r.fecha = new Date(r.fecha.getTime() + intervalo * 60 * 1000);
-        } 
-
-        if (r.cantidadDisponible < r.dosis) {
+          r.sent = false; // 👈 para permitir futuros envíos
+        } else if (r.cantidadDisponible === 0) {
           r.completed = true; // sin stock
         }
-        
       } else {
         r.completed = true;
       }
