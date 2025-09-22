@@ -206,8 +206,23 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
     const dentroDe1Min = new Date(ahora.getTime() + 60 * 1000);
 
     // ✅ Buscar recordatorios activos que caen en este minuto
-    const pendientes = await Reminder.find({
+      const pendientes = await Reminder.find({
       completed: false,
+      $or: [
+        // Para "control" → enviar 1 hora antes
+        {
+          tipo: "control",
+          fecha: {
+            $gte: new Date(ahora.getTime() + 60 * 60 * 1000),
+            $lt: new Date(dentroDe1Min.getTime() + 60 * 60 * 1000),
+          },
+        },
+        // Para otros tipos → enviar en la hora normal
+        {
+          tipo: { $ne: "control" },
+          fecha: { $gte: ahora, $lt: dentroDe1Min },
+        },
+      ],
       fecha: { $gte: ahora, $lt: dentroDe1Min },
     });
 
