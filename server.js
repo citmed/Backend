@@ -40,7 +40,6 @@ app.use("/api/auth", require("./routes/authRoutes"));
 
 // Ruta no encontrada
 app.use((req, res, next) => {
-  res.send ('CORRIENDO BACKEND CITAMED')
     res.status(404).json({ msg: 'Ruta no encontrada' });
 });
 
