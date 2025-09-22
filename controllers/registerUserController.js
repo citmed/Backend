@@ -4,10 +4,10 @@ const InfoUser = require('../models/InfoUser');
 
 const registerUser = async (req, res) => {
   try {
-    const { username, password, phone, ...info } = req.body;
+    const { username,email, password, phone, ...info } = req.body;
 
     // Validar campos obligatorios
-    if (!username || !password) {
+    if (!username || !email || !password) {
       return res.status(400).json({ msg: 'Faltan datos obligatorios' });
     }
 
@@ -27,12 +27,13 @@ const registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Crear nuevo usuario
-    user = new User({ username, password: hashedPassword });
+    user = new User({ username, email, password: hashedPassword });
     await user.save();
 
     // Guardar info adicional vinculada al usuario
     const userInfo = new InfoUser({
       ...info,
+      email,
       phone,
       userId: user._id
     });
@@ -43,6 +44,7 @@ const registerUser = async (req, res) => {
       user: {
         id: user._id,
         username: user.username,
+        email: user.email,
         phone
       }
     });
