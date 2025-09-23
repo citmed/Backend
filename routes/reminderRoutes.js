@@ -7,7 +7,8 @@ const {
   actualizarRecordatorio,
   marcarRecordatorioCompletado,
   ejecutarRecordatoriosPendientes,
-  obtenerRecordatorioPorId
+  obtenerRecordatorioPorId,
+  toggleFavorito
 } = require('../controllers/reminderController');
 
 
