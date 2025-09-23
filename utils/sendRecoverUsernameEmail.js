@@ -12,7 +12,7 @@ async function sendRecoverUsernameEmail(to, username) {
   const mailOptions = {
     from: `"Soporte CitaMed 📅" <${process.env.EMAIL_USER}>`,
     to,
-    subject: "Recuperación de nombre de usuario",
+    subject: "Recuperación usuario CitaMed",
     html: `
       <h2>Recuperación de usuario</h2>
       <p>Hola, solicitaste recuperar tu usuario.</p>
