@@ -310,6 +310,26 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
       error: error.message,
     });
   }
+
+
+  const toggleFavorito = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+
+    const reminder = await Reminder.findOne({ _id: id, userId });
+    if (!reminder) return res.status(404).json({ message: "Recordatorio no encontrado" });
+
+    reminder.favorito = !reminder.favorito; // alterna el estado
+    await reminder.save();
+
+    res.json({ message: "Favorito actualizado", reminder });
+  } catch (error) {
+    console.error("❌ Error en toggleFavorito:", error);
+    res.status(500).json({ message: "Error al actualizar favorito" });
+  }
+};
+
 };
 
 
