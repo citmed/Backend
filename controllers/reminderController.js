@@ -36,6 +36,7 @@ const crearRecordatorio = async (req, res) => {
       cantidadDisponible,
     } = req.body;
 
+
     const info = await InfoUser.findOne({ userId });
     const user = await User.findById(userId);
     const email = info?.email || (/\S+@\S+\.\S+/.test(user?.username) ? user.username : null);
@@ -43,6 +44,19 @@ const crearRecordatorio = async (req, res) => {
 
     const fechaNormalizada = fecha ? new Date(fecha) : new Date();
     const nombreCompleto = info?.name ? `${info.name} ${info.lastName || ''}`.trim() : "Paciente";
+
+
+    // 🔎 Verificar si ya existe un recordatorio en esa fecha/hora para ese usuario
+    const existe = await Reminder.findOne({
+      userId,
+      fecha: fechaNormalizada,
+    });
+
+    if (existe) {
+      return res.status(400).json({
+        message: "Ya tienes un recordatorio en esa fecha y hora",
+      });
+    }
 
     const reminder = new Reminder({
       userId,
@@ -214,8 +228,8 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
         {
           tipo: "control",
           fecha: {
-            $gte: new Date(ahora.getTime()+ 60 * 60 * 1000), // ahora real
-            $lt: new Date(dentroDe1Min.getTime()+ 60 * 60 * 1000), // dentro de 1 min
+            $gte: new Date(ahora.getTime() + 60 * 60 * 1000), // ahora real
+            $lt: new Date(dentroDe1Min.getTime() + 60 * 60 * 1000), // dentro de 1 min
           },
         },
         // Para otros tipos → enviar en la hora normal
@@ -265,7 +279,7 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
       // ✅ Marcar como enviado
       r.sent = true;
 
-    
+
       // ✅ Descontar dosis
       if (r.cantidadDisponible >= r.dosis) {
         r.cantidadDisponible -= r.dosis;
@@ -274,12 +288,12 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
         if (r.cantidadDisponible > r.dosis && r.intervaloPersonalizado) {
           const intervalo = parseInt(r.intervaloPersonalizado, 10); // minutos
           r.fecha = new Date(r.fecha.getTime() + intervalo * 60 * 1000);
-        } 
+        }
 
         if (r.cantidadDisponible < r.dosis) {
           r.completed = true; // sin stock
         }
-        
+
       } else {
         r.completed = true;
       }
@@ -309,6 +323,6 @@ module.exports = {
   actualizarRecordatorio,
   eliminarRecordatorio,
   marcarRecordatorioCompletado,
-  ejecutarRecordatoriosPendientes, 
+  ejecutarRecordatoriosPendientes,
   obtenerRecordatorioPorId,
 };
