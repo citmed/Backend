@@ -345,4 +345,5 @@ module.exports = {
   marcarRecordatorioCompletado,
   ejecutarRecordatoriosPendientes,
   obtenerRecordatorioPorId,
+  toggleFavorito,
 };
