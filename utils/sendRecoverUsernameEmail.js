@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
 
 async function sendRecoverUsernameEmail(to, username) {
   const mailOptions = {
-    from: `"Soporte CitaMed" <${process.env.EMAIL_USER}>`,
+    from: `"Soporte CitaMed 📅" <${process.env.EMAIL_USER}>`,
     to,
     subject: "Recuperación de nombre de usuario",
     html: `
