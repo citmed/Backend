@@ -310,6 +310,7 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
       error: error.message,
     });
   }
+};
 
 
   const toggleFavorito = async (req, res) => {
@@ -328,8 +329,6 @@ const ejecutarRecordatoriosPendientes = async (req, res) => {
     console.error("❌ Error en toggleFavorito:", error);
     res.status(500).json({ message: "Error al actualizar favorito" });
   }
-};
-
 };
 
 
