@@ -35,8 +35,8 @@ router.put('/:id/completed', authMiddleware, marcarRecordatorioCompletado);
 //✅ configuracion del cron cada minuto
 router.get("/cron/reminders", ejecutarRecordatoriosPendientes);
 
-//✅ Recordatorio favorito
-router.patch("/recordatorios/:id/favorito", authMiddleware, toggleFavorito);
+// ✅ Actualizar favorito 
+router.put("/:id/favorite", authMiddleware, toggleFavorito);
 
 
 
