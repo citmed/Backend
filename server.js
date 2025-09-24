@@ -26,7 +26,7 @@ mongoose.connect(process.env.MONGODB_URI)
 app.get("/", (req, res) => {
   res.send(`
     <h1> Bienvenido al Backend de CitaMed</h1>
-    <p>Tu API está funcionando correctamente en Vercel.</p>
+    <p>La API está funcionando correctamente en Vercel.</p>
   `);
 });
 
