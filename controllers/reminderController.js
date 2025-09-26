@@ -213,6 +213,46 @@ const marcarRecordatorioCompletado = async (req, res) => {
   }
 };
 
+// 📌 Marcar/Desmarcar recordatorio como favorito
+const marcarRecordatorioFavorito = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+
+    const reminder = await Reminder.findOne({ _id: id, userId });
+    if (!reminder) return res.status(404).json({ message: "Recordatorio no encontrado" });
+
+    // Alternar el valor
+    reminder.favorite = !reminder.favorite;
+    await reminder.save();
+
+    res.json({ favorite: reminder.favorite });
+  } catch (error) {
+    console.error("❌ Error en marcarRecordatorioFavorito:", error);
+    res.status(500).json({ message: "Error al actualizar favorito" });
+  }
+};
+
+
+// 📌 Obtener favoritos
+const obtenerFavoritos = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Usuario no autenticado" });
+
+    const favoritos = await Reminder.find({ userId, favorite: true });
+
+    res.json(favoritos);
+  } catch (error) {
+    console.error("❌ Error en obtenerFavoritos:", error);
+    res.status(500).json({ message: "Error al obtener favoritos" });
+  }
+};
+
+
+
+
+
 
 const ejecutarRecordatoriosPendientes = async (req, res) => {
   try {
@@ -325,4 +365,7 @@ module.exports = {
   marcarRecordatorioCompletado,
   ejecutarRecordatoriosPendientes,
   obtenerRecordatorioPorId,
+  marcarRecordatorioFavorito,
+  obtenerFavoritos,
+
 };

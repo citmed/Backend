@@ -55,6 +55,10 @@ const reminderSchema = new mongoose.Schema({
     type: String,
     default: "paciente",
   },
+  favorite: { 
+    type: Boolean,
+     default: false },
+
 });
 
 module.exports = mongoose.model("Reminder", reminderSchema);
