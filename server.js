@@ -25,7 +25,7 @@ mongoose.connect(process.env.MONGODB_URI)
 // ✅ Ruta raíz personalizada
 app.get("/", (req, res) => {
   res.send(`
-    <h1> Bienvenido al Backend Prueba de CitaMed</h1>
+    <h1> Bienvenido al Backend de CitaMed</h1>
     <p>La API está funcionando correctamente en Vercel.</p>
   `);
 });
